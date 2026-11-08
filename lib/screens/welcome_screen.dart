@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'role_selection_screen.dart';
+
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
@@ -70,7 +72,7 @@ class WelcomeScreen extends StatelessWidget {
 
               const Spacer(),
 
-              // Neumorphic Get Started button
+              //  Get Started button
               Container(
                 width: double.infinity,
                 height: 60,
@@ -95,9 +97,10 @@ class WelcomeScreen extends StatelessWidget {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(18),
                     onTap: () {
-                      ScaffoldMessenger.of(context).showSnackBar(
-                        const SnackBar(
-                          content: Text('Welcome to SmartAttend!'),
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => const RoleSelectionScreen(),
                         ),
                       );
                     },
