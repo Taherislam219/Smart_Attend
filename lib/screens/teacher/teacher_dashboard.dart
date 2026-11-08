@@ -4,6 +4,8 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'create_class_screen.dart';
 import 'edit_class_screen.dart';
+import 'enrollment_requests_screen.dart';
+import 'attendance_sheets_screen.dart';
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -111,6 +113,30 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     }
   }
 
+  Future<void> _openEnrollmentRequests(Map<String, dynamic> classData) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => EnrollmentRequestsScreen(
+          classId: classData['id'].toString(),
+          courseName: classData['course_name'].toString(),
+          section: classData['section'].toString(),
+        ),
+      ),
+    );
+  }
+
+  Future<void> _openAttendanceSheets(Map<String, dynamic> classData) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => AttendanceSheetsScreen(
+          classId: classData['id'].toString(),
+          courseName: classData['course_name'].toString(),
+          section: classData['section'].toString(),
+        ),
+      ),
+    );
+  }
+
   Future<void> _logout() async {
     if (_loggingOut) return;
     setState(() => _loggingOut = true);
@@ -174,6 +200,24 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
               onPressed: () => _openEditClass(item),
               icon: const Icon(Icons.edit_outlined),
               label: const Text('Edit Class'),
+              style: TextButton.styleFrom(foregroundColor: _text),
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () => _openEnrollmentRequests(item),
+              icon: const Icon(Icons.people_outline_rounded),
+              label: const Text('Enrollment Requests'),
+              style: TextButton.styleFrom(foregroundColor: _text),
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () => _openAttendanceSheets(item),
+              icon: const Icon(Icons.fact_check_outlined),
+              label: const Text('Attendance Sheets'),
               style: TextButton.styleFrom(foregroundColor: _text),
             ),
           ),
