@@ -1,5 +1,7 @@
+import '../../theme/smartattend_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
+import 'student_class_attendance_screen.dart';
 
 /// Lists only classes with an approved enrollment for the signed-in student.
 /// Course details come from the existing secure Student RPC.
@@ -11,10 +13,10 @@ class EnrolledClassesScreen extends StatefulWidget {
 }
 
 class _EnrolledClassesScreenState extends State<EnrolledClassesScreen> {
-  static const _background = Color(0xFFE8EEF3);
-  static const _text = Color(0xFF263238);
-  static const _muted = Color(0xFF607D8B);
-  static const _shadow = Color(0xFFB8C4CE);
+  static Color get _background => SmartAttendPalette.background;
+  static Color get _text => SmartAttendPalette.text;
+  static Color get _muted => SmartAttendPalette.muted;
+  static Color get _shadow => SmartAttendPalette.shadow;
 
   bool _loading = true;
   String? _error;
@@ -57,18 +59,20 @@ class _EnrolledClassesScreenState extends State<EnrolledClassesScreen> {
     final code = classroom['course_code']?.toString() ?? '';
     final semester = classroom['semester']?.toString() ?? '';
     final section = classroom['section']?.toString() ?? '';
-    return Container(
-      margin: const EdgeInsets.only(bottom: 22),
-      padding: const EdgeInsets.all(22),
+    return InkWell(
+      borderRadius: BorderRadius.circular(22),
+      onTap: () => Navigator.of(context).push(MaterialPageRoute(
+        builder: (_) => StudentClassAttendanceScreen(
+          classId: classroom['class_id'].toString(), courseName: name),
+      )),
+      child: Container(
+      margin: EdgeInsets.only(bottom: 22),
+      padding: EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: _background,
         borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
-          BoxShadow(
-            color: Colors.white,
-            offset: Offset(-5, -5),
-            blurRadius: 12,
-          ),
+        boxShadow: [
+          BoxShadow(color: SmartAttendPalette.highlight, offset: Offset(-5, -5), blurRadius: 12),
           BoxShadow(color: _shadow, offset: Offset(5, 5), blurRadius: 12),
         ],
       ),
@@ -77,115 +81,103 @@ class _EnrolledClassesScreenState extends State<EnrolledClassesScreen> {
         children: [
           Row(
             children: [
-              const Icon(Icons.menu_book_rounded, color: _muted),
-              const SizedBox(width: 12),
+              Icon(Icons.menu_book_rounded, color: _muted),
+              SizedBox(width: 12),
               Expanded(
-                child: Text(
-                  name,
-                  style: const TextStyle(
-                    color: _text,
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
+                child: Text(name,
+                    style: TextStyle(
+                      color: _text,
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    )),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          Text('Course code: $code', style: const TextStyle(color: _muted)),
-          const SizedBox(height: 6),
-          Text('Semester: $semester', style: const TextStyle(color: _muted)),
-          const SizedBox(height: 6),
-          Text('Section: $section', style: const TextStyle(color: _muted)),
-          const SizedBox(height: 15),
-          const Row(
+          SizedBox(height: 14),
+          Text('Course code: $code', style: TextStyle(color: _muted)),
+          SizedBox(height: 6),
+          Text('Semester: $semester', style: TextStyle(color: _muted)),
+          SizedBox(height: 6),
+          Text('Section: $section', style: TextStyle(color: _muted)),
+          SizedBox(height: 15),
+          Row(
             children: [
-              Icon(Icons.check_circle_outline_rounded, size: 18, color: _muted),
+              Icon(Icons.check_circle_outline_rounded,
+                  size: 18, color: _muted),
               SizedBox(width: 7),
-              Text(
-                'Enrolled',
-                style: TextStyle(color: _text, fontWeight: FontWeight.w600),
-              ),
+              Text('Enrolled',
+                  style: TextStyle(color: _text, fontWeight: FontWeight.w600)),
             ],
           ),
+          SizedBox(height: 12),
+          Text('Tap to view attendance', style: TextStyle(color: _muted, fontSize: 12)),
         ],
+      ),
       ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Rebuild when the app theme changes.
     return Scaffold(
       backgroundColor: _background,
       appBar: AppBar(
-        title: const Text('Enrolled Classes'),
+        title: Text('Enrolled Classes'),
         centerTitle: true,
         backgroundColor: _background,
         foregroundColor: _text,
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: _muted))
+          ? Center(child: CircularProgressIndicator(color: _muted))
           : _error != null
-          ? Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(_error!, style: const TextStyle(color: _text)),
-                  const SizedBox(height: 12),
-                  TextButton(
-                    onPressed: _loadClasses,
-                    child: const Text('Retry'),
-                  ),
-                ],
-              ),
-            )
-          : RefreshIndicator(
-              onRefresh: _loadClasses,
-              child: Center(
-                child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 760),
-                  child: ListView(
-                    padding: const EdgeInsets.all(24),
+              ? Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Text(
-                        '${_classes.length} approved class${_classes.length == 1 ? '' : 'es'}',
-                        style: const TextStyle(color: _muted, fontSize: 15),
-                      ),
-                      const SizedBox(height: 24),
-                      if (_classes.isEmpty)
-                        const Padding(
-                          padding: EdgeInsets.symmetric(vertical: 65),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.menu_book_outlined,
-                                size: 52,
-                                color: _muted,
-                              ),
-                              SizedBox(height: 14),
-                              Text(
-                                'No enrolled classes yet',
-                                style: TextStyle(
-                                  color: _text,
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 18,
-                                ),
-                              ),
-                              SizedBox(height: 8),
-                              Text(
-                                'Approved classes will appear here.',
-                                style: TextStyle(color: _muted),
-                              ),
-                            ],
-                          ),
-                        )
-                      else
-                        for (final classroom in _classes) _card(classroom),
+                      Text(_error!, style: TextStyle(color: _text)),
+                      SizedBox(height: 12),
+                      TextButton(onPressed: _loadClasses, child: Text('Retry')),
                     ],
                   ),
+                )
+              : RefreshIndicator(
+                  onRefresh: _loadClasses,
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(maxWidth: 760),
+                      child: ListView(
+                        padding: EdgeInsets.all(24),
+                        children: [
+                          Text('${_classes.length} approved class${_classes.length == 1 ? '' : 'es'}',
+                              style: TextStyle(color: _muted, fontSize: 15)),
+                          SizedBox(height: 24),
+                          if (_classes.isEmpty)
+                            Padding(
+                              padding: EdgeInsets.symmetric(vertical: 65),
+                              child: Column(
+                                children: [
+                                  Icon(Icons.menu_book_outlined, size: 52, color: _muted),
+                                  SizedBox(height: 14),
+                                  Text('No enrolled classes yet',
+                                      style: TextStyle(
+                                        color: _text,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 18,
+                                      )),
+                                  SizedBox(height: 8),
+                                  Text('Approved classes will appear here.',
+                                      style: TextStyle(color: _muted)),
+                                ],
+                              ),
+                            )
+                          else
+                            for (final classroom in _classes) _card(classroom),
+                        ],
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-            ),
     );
   }
 }

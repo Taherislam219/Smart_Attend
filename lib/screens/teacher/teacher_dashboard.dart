@@ -1,3 +1,5 @@
+import '../../theme/smartattend_theme.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -6,6 +8,7 @@ import 'create_class_screen.dart';
 import 'edit_class_screen.dart';
 import 'enrollment_requests_screen.dart';
 import 'attendance_sheets_screen.dart';
+import 'semester_report_screen.dart';
 
 class TeacherDashboard extends StatefulWidget {
   const TeacherDashboard({super.key});
@@ -15,10 +18,10 @@ class TeacherDashboard extends StatefulWidget {
 }
 
 class _TeacherDashboardState extends State<TeacherDashboard> {
-  static const _background = Color(0xFFE8EEF3);
-  static const _text = Color(0xFF263238);
-  static const _muted = Color(0xFF607D8B);
-  static const _shadow = Color(0xFFB8C4CE);
+  static Color get _background => SmartAttendPalette.background;
+  static Color get _text => SmartAttendPalette.text;
+  static Color get _muted => SmartAttendPalette.muted;
+  static Color get _shadow => SmartAttendPalette.shadow;
 
   final _supabase = Supabase.instance.client;
   String _teacherName = 'Teacher';
@@ -56,7 +59,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
       await _supabase.auth.signOut();
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Teacher verification failed. Please log in again.'),
         ),
       );
@@ -88,14 +91,12 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
   }
 
   Future<void> _openCreateClass() async {
-    final created = await Navigator.of(
-      context,
-    ).push<bool>(MaterialPageRoute(builder: (_) => const CreateClassScreen()));
+    final created = await Navigator.of(context)
+        .push<bool>(MaterialPageRoute(builder: (_) => CreateClassScreen()));
     if (!mounted) return;
     if (created == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Class created successfully!')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Class created successfully!')));
       await _loadClasses();
     }
   }
@@ -106,9 +107,8 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     );
     if (!mounted) return;
     if (updated == true) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Class updated successfully!')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Class updated successfully!')));
       await _loadClasses();
     }
   }
@@ -137,6 +137,14 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     );
   }
 
+  Future<void> _openSemesterReport(Map<String, dynamic> classData) async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => SemesterReportScreen(classData: classData),
+      ),
+    );
+  }
+
   Future<void> _logout() async {
     if (_loggingOut) return;
     setState(() => _loggingOut = true);
@@ -147,7 +155,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Logout failed. Please try again.')),
+        SnackBar(content: Text('Logout failed. Please try again.')),
       );
     } finally {
       if (mounted) setState(() => _loggingOut = false);
@@ -157,13 +165,13 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
   Widget _card(Widget child) {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(22),
+      padding: EdgeInsets.all(22),
       decoration: BoxDecoration(
         color: _background,
         borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Colors.white,
+            color: SmartAttendPalette.highlight,
             offset: Offset(-6, -6),
             blurRadius: 12,
           ),
@@ -182,24 +190,24 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
         children: [
           Text(
             item['course_name']?.toString() ?? '',
-            style: const TextStyle(
+            style: TextStyle(
               fontSize: 19,
               fontWeight: FontWeight.bold,
               color: _text,
             ),
           ),
-          const SizedBox(height: 8),
+          SizedBox(height: 8),
           Text(
             '${item['course_code']}  •  ${item['semester']}  •  Section ${item['section']}',
-            style: const TextStyle(color: _muted),
+            style: TextStyle(color: _muted),
           ),
-          const SizedBox(height: 14),
+          SizedBox(height: 14),
           Align(
             alignment: Alignment.centerRight,
             child: TextButton.icon(
               onPressed: () => _openEditClass(item),
-              icon: const Icon(Icons.edit_outlined),
-              label: const Text('Edit Class'),
+              icon: Icon(Icons.edit_outlined),
+              label: Text('Edit Class'),
               style: TextButton.styleFrom(foregroundColor: _text),
             ),
           ),
@@ -207,8 +215,8 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
             alignment: Alignment.centerRight,
             child: TextButton.icon(
               onPressed: () => _openEnrollmentRequests(item),
-              icon: const Icon(Icons.people_outline_rounded),
-              label: const Text('Enrollment Requests'),
+              icon: Icon(Icons.people_outline_rounded),
+              label: Text('Enrollment Requests'),
               style: TextButton.styleFrom(foregroundColor: _text),
             ),
           ),
@@ -216,18 +224,27 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
             alignment: Alignment.centerRight,
             child: TextButton.icon(
               onPressed: () => _openAttendanceSheets(item),
-              icon: const Icon(Icons.fact_check_outlined),
-              label: const Text('Attendance Sheets'),
+              icon: Icon(Icons.fact_check_outlined),
+              label: Text('Attendance Sheets'),
+              style: TextButton.styleFrom(foregroundColor: _text),
+            ),
+          ),
+          Align(
+            alignment: Alignment.centerRight,
+            child: TextButton.icon(
+              onPressed: () => _openSemesterReport(item),
+              icon: Icon(Icons.assessment_outlined),
+              label: Text('Semester Report / PDF'),
               style: TextButton.styleFrom(foregroundColor: _text),
             ),
           ),
           Row(
             children: [
-              const Text('Join code: ', style: TextStyle(color: _muted)),
+              Text('Join code: ', style: TextStyle(color: _muted)),
               Expanded(
                 child: SelectableText(
                   joinCode,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.bold,
                     color: _text,
                     fontSize: 17,
@@ -236,13 +253,13 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
               ),
               IconButton(
                 tooltip: 'Copy join code',
-                icon: const Icon(Icons.copy_rounded, color: _text),
+                icon: Icon(Icons.copy_rounded, color: _text),
                 onPressed: () async {
                   await Clipboard.setData(ClipboardData(text: joinCode));
                   if (!mounted) return;
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Join code copied')),
-                  );
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(SnackBar(content: Text('Join code copied')));
                 },
               ),
             ],
@@ -254,69 +271,119 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Rebuild when the app theme changes.
     return Scaffold(
       backgroundColor: _background,
       appBar: AppBar(
-        title: const Text('Teacher Dashboard'),
+        title: Text('Teacher Dashboard'),
         backgroundColor: _background,
         foregroundColor: _text,
         automaticallyImplyLeading: false,
         actions: [
-          IconButton(
-            tooltip: 'Logout',
-            onPressed: _loggingOut ? null : _logout,
-            icon: const Icon(Icons.logout_rounded),
+          PopupMenuButton<String>(
+            tooltip: 'More options',
+            icon: Icon(Icons.more_vert_rounded, color: _text),
+            onSelected: (action) async {
+              if (action == 'theme') {
+                SmartAttendTheme.toggle();
+              } else if (action == 'logout') {
+                final confirm = await showDialog<bool>(
+                  context: context,
+                  builder: (dialogContext) => AlertDialog(
+                    title: Text('Log out?'),
+                    content: Text(
+                      'Are you sure you want to log out of SmartAttend?',
+                    ),
+                    actions: [
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext, false),
+                        child: Text('Cancel'),
+                      ),
+                      TextButton(
+                        onPressed: () => Navigator.pop(dialogContext, true),
+                        child: Text('Log out'),
+                      ),
+                    ],
+                  ),
+                );
+                if (!mounted || confirm != true) return;
+                await _logout();
+              }
+            },
+            itemBuilder: (menuContext) => [
+              PopupMenuItem<String>(
+                value: 'theme',
+                child: Row(
+                  children: [
+                    Icon(
+                      SmartAttendTheme.isDark
+                          ? Icons.light_mode_outlined
+                          : Icons.dark_mode_outlined,
+                    ),
+                    SizedBox(width: 12),
+                    Text(SmartAttendTheme.isDark ? 'Light Mode' : 'Dark Mode'),
+                  ],
+                ),
+              ),
+              PopupMenuItem<String>(
+                value: 'logout',
+                child: Row(
+                  children: [
+                    Icon(Icons.logout_rounded),
+                    SizedBox(width: 12),
+                    Text('Logout'),
+                  ],
+                ),
+              ),
+            ],
           ),
+          SizedBox(width: 8),
         ],
       ),
       body: _loading
-          ? const Center(child: CircularProgressIndicator(color: _text))
+          ? Center(child: CircularProgressIndicator(color: _text))
           : SafeArea(
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 800),
+                  constraints: BoxConstraints(maxWidth: 800),
                   child: RefreshIndicator(
                     onRefresh: _loadClasses,
                     child: ListView(
-                      padding: const EdgeInsets.all(26),
+                      padding: EdgeInsets.all(26),
                       children: [
-                        const SizedBox(height: 12),
                         _card(
                           Column(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              const Icon(
+                              Icon(
                                 Icons.co_present_rounded,
                                 size: 46,
                                 color: _text,
                               ),
-                              const SizedBox(height: 18),
-                              const Text(
+                              SizedBox(height: 18),
+                              Text(
                                 'Welcome,',
                                 style: TextStyle(fontSize: 16, color: _muted),
                               ),
-                              const SizedBox(height: 6),
+                              SizedBox(height: 6),
                               Text(
                                 _teacherName,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 25,
                                   fontWeight: FontWeight.bold,
                                   color: _text,
                                 ),
                               ),
-                              const SizedBox(height: 8),
+                              SizedBox(height: 8),
                               Text(
                                 _teacherEmail,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: _muted,
-                                ),
+                                style: TextStyle(fontSize: 14, color: _muted),
                               ),
                             ],
                           ),
                         ),
-                        const SizedBox(height: 38),
-                        const Text(
+                        SizedBox(height: 38),
+                        Text(
                           'My Classes',
                           style: TextStyle(
                             fontSize: 23,
@@ -324,29 +391,27 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                             color: _text,
                           ),
                         ),
-                        const SizedBox(height: 18),
+                        SizedBox(height: 18),
                         if (_classesLoading)
-                          const Center(
-                            child: CircularProgressIndicator(color: _text),
-                          )
+                          Center(child: CircularProgressIndicator(color: _text))
                         else if (_classesError != null)
                           _card(
                             Column(
                               children: [
                                 Text(
                                   _classesError!,
-                                  style: const TextStyle(color: _muted),
+                                  style: TextStyle(color: _muted),
                                 ),
                                 TextButton(
                                   onPressed: _loadClasses,
-                                  child: const Text('Retry'),
+                                  child: Text('Retry'),
                                 ),
                               ],
                             ),
                           )
                         else if (_classes.isEmpty)
                           _card(
-                            const Column(
+                            Column(
                               children: [
                                 Icon(
                                   Icons.class_outlined,
@@ -374,17 +439,17 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                         else
                           for (final item in _classes) ...[
                             _classCard(item),
-                            const SizedBox(height: 20),
+                            SizedBox(height: 20),
                           ],
-                        const SizedBox(height: 28),
+                        SizedBox(height: 28),
                         Container(
                           height: 56,
                           decoration: BoxDecoration(
                             color: _background,
                             borderRadius: BorderRadius.circular(18),
-                            boxShadow: const [
+                            boxShadow: [
                               BoxShadow(
-                                color: Colors.white,
+                                color: SmartAttendPalette.highlight,
                                 offset: Offset(-5, -5),
                                 blurRadius: 10,
                               ),
@@ -400,7 +465,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                             child: InkWell(
                               borderRadius: BorderRadius.circular(18),
                               onTap: _openCreateClass,
-                              child: const Row(
+                              child: Row(
                                 mainAxisAlignment: MainAxisAlignment.center,
                                 children: [
                                   Icon(Icons.add_rounded, color: _text),
@@ -418,7 +483,7 @@ class _TeacherDashboardState extends State<TeacherDashboard> {
                             ),
                           ),
                         ),
-                        const SizedBox(height: 24),
+                        SizedBox(height: 24),
                       ],
                     ),
                   ),

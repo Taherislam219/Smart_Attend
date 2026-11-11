@@ -1,3 +1,5 @@
+import '../../theme/smartattend_theme.dart';
+
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -19,10 +21,10 @@ class EnrollmentRequestsScreen extends StatefulWidget {
 }
 
 class _EnrollmentRequestsScreenState extends State<EnrollmentRequestsScreen> {
-  static const _background = Color(0xFFE8EEF3);
-  static const _text = Color(0xFF263238);
-  static const _muted = Color(0xFF607D8B);
-  static const _shadow = Color(0xFFB8C4CE);
+  static Color get _background => SmartAttendPalette.background;
+  static Color get _text => SmartAttendPalette.text;
+  static Color get _muted => SmartAttendPalette.muted;
+  static Color get _shadow => SmartAttendPalette.shadow;
 
   final _supabase = Supabase.instance.client;
   List<Map<String, dynamic>> _requests = [];
@@ -74,7 +76,7 @@ class _EnrollmentRequestsScreenState extends State<EnrollmentRequestsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, false),
-            child: const Text('Cancel'),
+            child: Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(dialogContext, true),
@@ -99,7 +101,7 @@ class _EnrollmentRequestsScreenState extends State<EnrollmentRequestsScreen> {
       if (!mounted) return;
       if (updated.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('Request already reviewed or not authorized.'),
           ),
         );
@@ -119,7 +121,7 @@ class _EnrollmentRequestsScreenState extends State<EnrollmentRequestsScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not update request. Try again.')),
+        SnackBar(content: Text('Could not update request. Try again.')),
       );
     } finally {
       if (mounted) setState(() => _processingId = null);
@@ -128,12 +130,16 @@ class _EnrollmentRequestsScreenState extends State<EnrollmentRequestsScreen> {
 
   Widget _card(Widget child) => Container(
     width: double.infinity,
-    padding: const EdgeInsets.all(20),
+    padding: EdgeInsets.all(20),
     decoration: BoxDecoration(
       color: _background,
       borderRadius: BorderRadius.circular(22),
-      boxShadow: const [
-        BoxShadow(color: Colors.white, offset: Offset(-5, -5), blurRadius: 12),
+      boxShadow: [
+        BoxShadow(
+          color: SmartAttendPalette.highlight,
+          offset: Offset(-5, -5),
+          blurRadius: 12,
+        ),
         BoxShadow(color: _shadow, offset: Offset(5, 5), blurRadius: 12),
       ],
     ),
@@ -145,35 +151,35 @@ class _EnrollmentRequestsScreenState extends State<EnrollmentRequestsScreen> {
     final requestId = request['enrollment_id']?.toString() ?? '';
     final busy = _processingId != null;
     return Padding(
-      padding: const EdgeInsets.only(bottom: 18),
+      padding: EdgeInsets.only(bottom: 18),
       child: _card(
         Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
               request['student_name']?.toString() ?? 'Student',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.bold,
                 color: _text,
               ),
             ),
-            const SizedBox(height: 5),
+            SizedBox(height: 5),
             Text(
               'Student ID: ${request['student_university_id'] ?? ''}',
-              style: const TextStyle(color: _muted),
+              style: TextStyle(color: _muted),
             ),
-            const SizedBox(height: 10),
+            SizedBox(height: 10),
             Text(
               'Status: ${status == 'pending'
                   ? 'Pending approval'
                   : status == 'approved'
                   ? 'Approved'
                   : 'Rejected'}',
-              style: const TextStyle(color: _text, fontWeight: FontWeight.w600),
+              style: TextStyle(color: _text, fontWeight: FontWeight.w600),
             ),
             if (status == 'pending') ...[
-              const SizedBox(height: 15),
+              SizedBox(height: 15),
               Wrap(
                 spacing: 12,
                 runSpacing: 8,
@@ -182,7 +188,7 @@ class _EnrollmentRequestsScreenState extends State<EnrollmentRequestsScreen> {
                     onPressed: busy || requestId.isEmpty
                         ? null
                         : () => _review(request, 'approved'),
-                    icon: const Icon(Icons.check_rounded),
+                    icon: Icon(Icons.check_rounded),
                     label: Text(
                       busy && _processingId == requestId
                           ? 'Saving...'
@@ -190,15 +196,15 @@ class _EnrollmentRequestsScreenState extends State<EnrollmentRequestsScreen> {
                     ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: _text,
-                      foregroundColor: Colors.white,
+                      foregroundColor: SmartAttendPalette.background,
                     ),
                   ),
                   OutlinedButton.icon(
                     onPressed: busy || requestId.isEmpty
                         ? null
                         : () => _review(request, 'rejected'),
-                    icon: const Icon(Icons.close_rounded),
-                    label: const Text('Reject'),
+                    icon: Icon(Icons.close_rounded),
+                    label: Text('Reject'),
                     style: OutlinedButton.styleFrom(foregroundColor: _text),
                   ),
                 ],
@@ -212,53 +218,54 @@ class _EnrollmentRequestsScreenState extends State<EnrollmentRequestsScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Rebuild when the app theme changes.
     return Scaffold(
       backgroundColor: _background,
       appBar: AppBar(
-        title: const Text('Enrollment Requests'),
+        title: Text('Enrollment Requests'),
         backgroundColor: _background,
         foregroundColor: _text,
       ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 760),
+            constraints: BoxConstraints(maxWidth: 760),
             child: RefreshIndicator(
               onRefresh: _loadRequests,
               child: ListView(
-                padding: const EdgeInsets.all(26),
+                padding: EdgeInsets.all(26),
                 children: [
                   Text(
                     widget.courseName,
-                    style: const TextStyle(
+                    style: TextStyle(
                       fontSize: 23,
                       fontWeight: FontWeight.bold,
                       color: _text,
                     ),
                   ),
-                  const SizedBox(height: 5),
+                  SizedBox(height: 5),
                   Text(
                     'Section ${widget.section}',
-                    style: const TextStyle(color: _muted),
+                    style: TextStyle(color: _muted),
                   ),
-                  const SizedBox(height: 26),
+                  SizedBox(height: 26),
                   if (_loading)
-                    const Center(child: CircularProgressIndicator(color: _text))
+                    Center(child: CircularProgressIndicator(color: _text))
                   else if (_error != null)
                     _card(
                       Column(
                         children: [
-                          Text(_error!, style: const TextStyle(color: _text)),
+                          Text(_error!, style: TextStyle(color: _text)),
                           TextButton(
                             onPressed: _loadRequests,
-                            child: const Text('Retry'),
+                            child: Text('Retry'),
                           ),
                         ],
                       ),
                     )
                   else if (_requests.isEmpty)
                     _card(
-                      const Text(
+                      Text(
                         'No enrollment requests yet.',
                         textAlign: TextAlign.center,
                         style: TextStyle(color: _muted),
@@ -266,7 +273,7 @@ class _EnrollmentRequestsScreenState extends State<EnrollmentRequestsScreen> {
                     )
                   else
                     for (final request in _requests) _requestCard(request),
-                  const SizedBox(height: 24),
+                  SizedBox(height: 24),
                 ],
               ),
             ),

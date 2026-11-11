@@ -1,3 +1,4 @@
+import '../../theme/smartattend_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -11,10 +12,10 @@ class EditClassScreen extends StatefulWidget {
 }
 
 class _EditClassScreenState extends State<EditClassScreen> {
-  static const _background = Color(0xFFE8EEF3);
-  static const _text = Color(0xFF263238);
-  static const _muted = Color(0xFF607D8B);
-  static const _shadow = Color(0xFFB8C4CE);
+  static Color get _background => SmartAttendPalette.background;
+  static Color get _text => SmartAttendPalette.text;
+  static Color get _muted => SmartAttendPalette.muted;
+  static Color get _shadow => SmartAttendPalette.shadow;
 
   final _formKey = GlobalKey<FormState>();
   late final TextEditingController _courseName;
@@ -64,7 +65,8 @@ class _EditClassScreenState extends State<EditClassScreen> {
         !RegExp(r'^[A-Za-z][A-Za-z0-9 -]{1,19}$').hasMatch(text)) {
       return 'Enter a course code such as CSE-3212';
     }
-    if (index == 3 && !RegExp(r'^[A-Za-z0-9]{1,10}$').hasMatch(text)) {
+    if (index == 3 &&
+        !RegExp(r'^[A-Za-z0-9]{1,10}$').hasMatch(text)) {
       return 'Use 1–10 letters or numbers';
     }
     return null;
@@ -118,9 +120,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Could not update class. Please try again.'),
-        ),
+        SnackBar(content: Text('Could not update class. Please try again.')),
       );
     } finally {
       if (mounted) setState(() => _saving = false);
@@ -138,8 +138,8 @@ class _EditClassScreenState extends State<EditClassScreen> {
       decoration: BoxDecoration(
         color: _background,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: const [
-          BoxShadow(color: Colors.white, offset: Offset(-3, -3), blurRadius: 8),
+        boxShadow: [
+          BoxShadow(color: SmartAttendPalette.highlight, offset: Offset(-3, -3), blurRadius: 8),
           BoxShadow(color: _shadow, offset: Offset(3, 3), blurRadius: 8),
         ],
       ),
@@ -152,9 +152,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
         textCapitalization: index == 0 || index == 2
             ? TextCapitalization.words
             : TextCapitalization.characters,
-        textInputAction: index == 3
-            ? TextInputAction.done
-            : TextInputAction.next,
+        textInputAction: index == 3 ? TextInputAction.done : TextInputAction.next,
         onFieldSubmitted: (_) => _nextField(index, controller),
         decoration: InputDecoration(
           labelText: label,
@@ -163,10 +161,7 @@ class _EditClassScreenState extends State<EditClassScreen> {
             borderRadius: BorderRadius.circular(18),
             borderSide: BorderSide.none,
           ),
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 20,
-            horizontal: 16,
-          ),
+          contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         ),
       ),
     );
@@ -174,91 +169,50 @@ class _EditClassScreenState extends State<EditClassScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Rebuild when the app theme changes.
     return Scaffold(
       backgroundColor: _background,
       appBar: AppBar(
-        title: const Text('Edit Class'),
+        title: Text('Edit Class'),
         backgroundColor: _background,
         foregroundColor: _text,
       ),
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
+            constraints: BoxConstraints(maxWidth: 520),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(26),
+              padding: EdgeInsets.all(26),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const Text(
-                      'Edit Semester Class',
-                      style: TextStyle(
-                        fontSize: 26,
-                        fontWeight: FontWeight.bold,
-                        color: _text,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Correct the class details. The join code and student enrollments will stay the same.',
-                      style: TextStyle(color: _muted),
-                    ),
-                    const SizedBox(height: 30),
-                    _field(
-                      'Course name',
-                      _courseName,
-                      Icons.book_outlined,
-                      _courseNameFocus,
-                      0,
-                    ),
-                    const SizedBox(height: 20),
-                    _field(
-                      'Course code',
-                      _courseCode,
-                      Icons.tag_rounded,
-                      _courseCodeFocus,
-                      1,
-                    ),
-                    const SizedBox(height: 20),
-                    _field(
-                      'Semester',
-                      _semester,
-                      Icons.calendar_month_outlined,
-                      _semesterFocus,
-                      2,
-                    ),
-                    const SizedBox(height: 20),
-                    _field(
-                      'Section',
-                      _section,
-                      Icons.groups_outlined,
-                      _sectionFocus,
-                      3,
-                    ),
-                    const SizedBox(height: 22),
-                    Text(
-                      'Join code: ${widget.classData['join_code'] ?? ''} (unchanged)',
-                      style: const TextStyle(color: _muted),
-                    ),
-                    const SizedBox(height: 30),
+                    Text('Edit Semester Class',
+                        style: TextStyle(fontSize: 26, fontWeight: FontWeight.bold, color: _text)),
+                    SizedBox(height: 8),
+                    Text('Correct the class details. The join code and student enrollments will stay the same.',
+                        style: TextStyle(color: _muted)),
+                    SizedBox(height: 30),
+                    _field('Course name', _courseName, Icons.book_outlined, _courseNameFocus, 0),
+                    SizedBox(height: 20),
+                    _field('Course code', _courseCode, Icons.tag_rounded, _courseCodeFocus, 1),
+                    SizedBox(height: 20),
+                    _field('Semester', _semester, Icons.calendar_month_outlined, _semesterFocus, 2),
+                    SizedBox(height: 20),
+                    _field('Section', _section, Icons.groups_outlined, _sectionFocus, 3),
+                    SizedBox(height: 22),
+                    Text('Join code: ${widget.classData['join_code'] ?? ''} (unchanged)',
+                        style: TextStyle(color: _muted)),
+                    SizedBox(height: 30),
                     Container(
                       height: 56,
                       decoration: BoxDecoration(
                         color: _background,
                         borderRadius: BorderRadius.circular(18),
-                        boxShadow: const [
-                          BoxShadow(
-                            color: Colors.white,
-                            offset: Offset(-5, -5),
-                            blurRadius: 10,
-                          ),
-                          BoxShadow(
-                            color: _shadow,
-                            offset: Offset(5, 5),
-                            blurRadius: 10,
-                          ),
+                        boxShadow: [
+                          BoxShadow(color: SmartAttendPalette.highlight, offset: Offset(-5, -5), blurRadius: 10),
+                          BoxShadow(color: _shadow, offset: Offset(5, 5), blurRadius: 10),
                         ],
                       ),
                       child: Material(
@@ -268,15 +222,9 @@ class _EditClassScreenState extends State<EditClassScreen> {
                           onTap: _saving ? null : _saveChanges,
                           child: Center(
                             child: _saving
-                                ? const CircularProgressIndicator(color: _text)
-                                : const Text(
-                                    'Save Changes',
-                                    style: TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.bold,
-                                      color: _text,
-                                    ),
-                                  ),
+                                ? CircularProgressIndicator(color: _text)
+                                : Text('Save Changes',
+                                    style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: _text)),
                           ),
                         ),
                       ),

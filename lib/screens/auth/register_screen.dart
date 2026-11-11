@@ -1,9 +1,9 @@
+import '../../theme/smartattend_theme.dart';
 import 'package:flutter/material.dart';
-
-import '../../utils/validators.dart';
-import '../../services/auth_service.dart';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import '../../services/auth_service.dart';
+import '../../utils/validators.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -13,112 +13,132 @@ class RegisterScreen extends StatefulWidget {
 }
 
 class _RegisterScreenState extends State<RegisterScreen> {
-  static const background = Color(0xFFE8EEF3);
-  static const ink = Color(0xFF263238);
-  final formKey = GlobalKey<FormState>();
-  final name = TextEditingController();
-  final studentId = TextEditingController();
-  final email = TextEditingController();
-  final password = TextEditingController();
-  final confirm = TextEditingController();
-  final AuthService _authService = AuthService();
-  bool _isLoading = false;
-  bool hidePassword = true;
-  bool hideConfirm = true;
+  static Color get _background => SmartAttendPalette.background;
+  static Color get _text => SmartAttendPalette.text;
+  static Color get _muted => SmartAttendPalette.muted;
+  static Color get _shadow => SmartAttendPalette.shadow;
+
+  final _formKey = GlobalKey<FormState>();
+  final _name = TextEditingController();
+  final _studentId = TextEditingController();
+  final _email = TextEditingController();
+  final _password = TextEditingController();
+  final _confirm = TextEditingController();
+  final _authService = AuthService();
+
+  bool _busy = false;
+  bool _hidePassword = true;
+  bool _hideConfirm = true;
 
   @override
   void dispose() {
-    name.dispose();
-    studentId.dispose();
-    email.dispose();
-    password.dispose();
-    confirm.dispose();
+    _name.dispose();
+    _studentId.dispose();
+    _email.dispose();
+    _password.dispose();
+    _confirm.dispose();
     super.dispose();
   }
 
-  Future<void> submit() async {
-    // Step 1: Check all form fields.
-    if (!formKey.currentState!.validate()) return;
+  String _friendlyRegistrationMessage(Object error) {
+    if (error is AuthException) {
+      // Use only known, safe messages; never show raw backend JSON to a student.
+      final message = error.message.toLowerCase();
+      if (message.contains('already registered') ||
+          message.contains('already exists') ||
+          message.contains('user already')) {
+        return 'This email may already have an account. Try logging in or resetting your password.';
+      }
+      if (message.contains('rate limit') || message.contains('too many')) {
+        return 'Too many requests. Please try again later.';
+      }
+      if (message.contains('invalid email')) {
+        return 'Please enter a valid email address.';
+      }
+      if (message.contains('weak password') || message.contains('password')) {
+        return 'Please choose a stronger password and try again.';
+      }
+    }
+    // A database trigger can fail on an existing student ID or backend setup.
+    // Do not claim a specific cause, or expose its internals.
+    return 'We couldn’t create your account. Check your details or try again later. If this continues, contact support.';
+  }
 
-    // Step 2: Prevent repeated submissions.
-    if (_isLoading) return;
-
-    setState(() {
-      _isLoading = true;
-    });
-
+  Future<void> _submit() async {
+    if (_busy || !_formKey.currentState!.validate()) return;
+    setState(() => _busy = true);
     try {
-      // Step 3: Register student using Supabase Auth.
       await _authService.registerStudent(
-        fullName: name.text,
-        universityStudentId: studentId.text,
-        email: email.text,
-        password: password.text,
+        fullName: _name.text.trim(),
+        universityStudentId: _studentId.text.trim(),
+        email: _email.text.trim(),
+        password: _password.text,
       );
-
       if (!mounted) return;
-
-      // Step 4: Inform the student.
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          backgroundColor: _background,
+          title: Text('Check your email'),
           content: Text(
-            'Registration submitted! Check your email '
-            'for the verification link.',
+            'If your registration was accepted, check your inbox for a verification link. '
+            'Confirm your email before logging in.',
           ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: Text('OK'),
+            ),
+          ],
         ),
       );
-
-      // Step 5: Return to the login screen.
-      Navigator.pop(context);
-    } on AuthException catch (error) {
-      if (!mounted) return;
-
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text(error.message)));
+      if (mounted) Navigator.of(context).pop();
     } catch (error) {
+      // Development-only diagnostics; do not expose raw errors in production UI.
+      assert(() {
+        debugPrint('Registration failed: ${error.runtimeType}');
+        return true;
+      }());
       if (!mounted) return;
-
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Registration failed. Please try again.')),
+        SnackBar(content: Text(_friendlyRegistrationMessage(error))),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
-      }
+      if (mounted) setState(() => _busy = false);
     }
   }
 
-  Widget field({
+  Widget _field({
     required String label,
     required TextEditingController controller,
     required IconData icon,
-    required String? Function(String?) validator,
-    TextInputType? keyboard,
+    required FormFieldValidator<String> validator,
+    TextInputType? keyboardType,
     bool obscure = false,
+    TextInputAction? action,
     Widget? suffix,
+    FocusNode? focusNode,
+    VoidCallback? onEditingComplete,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 18),
+      margin: EdgeInsets.only(bottom: 19),
       decoration: BoxDecoration(
-        color: background,
+        color: _background,
         borderRadius: BorderRadius.circular(18),
-        boxShadow: const [
-          BoxShadow(color: Colors.white, offset: Offset(-4, -4), blurRadius: 9),
-          BoxShadow(
-            color: Color(0xFFB8C4CE),
-            offset: Offset(4, 4),
-            blurRadius: 9,
-          ),
+        boxShadow: [
+          BoxShadow(color: SmartAttendPalette.highlight, offset: Offset(-5, -5), blurRadius: 10),
+          BoxShadow(color: _shadow, offset: Offset(5, 5), blurRadius: 10),
         ],
       ),
       child: TextFormField(
         controller: controller,
-        validator: validator,
-        keyboardType: keyboard,
+        focusNode: focusNode,
+        keyboardType: keyboardType,
         obscureText: obscure,
+        validator: validator,
         autovalidateMode: AutovalidateMode.onUserInteraction,
+        textInputAction: action,
+        onEditingComplete: onEditingComplete,
         decoration: InputDecoration(
           labelText: label,
           prefixIcon: Icon(icon),
@@ -127,10 +147,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
             borderRadius: BorderRadius.circular(18),
             borderSide: BorderSide.none,
           ),
-          contentPadding: const EdgeInsets.symmetric(
-            vertical: 19,
-            horizontal: 14,
-          ),
+          contentPadding: EdgeInsets.symmetric(vertical: 20, horizontal: 16),
         ),
       ),
     );
@@ -138,150 +155,130 @@ class _RegisterScreenState extends State<RegisterScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Rebuild when the app theme changes.
     return Scaffold(
-      backgroundColor: background,
+      backgroundColor: _background,
       appBar: AppBar(
-        title: const Text('Student Registration'),
-        backgroundColor: background,
-        foregroundColor: ink,
+        title: Text('Student Registration'),
+        centerTitle: true,
+        backgroundColor: _background,
+        foregroundColor: _text,
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Form(
-            key: formKey,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                const Icon(
-                  Icons.person_add_alt_1_rounded,
-                  size: 66,
-                  color: ink,
-                ),
-                const SizedBox(height: 14),
-                const Text(
-                  'Create Account',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 28,
-                    fontWeight: FontWeight.bold,
-                    color: ink,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Register as a student',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Color(0xFF607D8B)),
-                ),
-                const SizedBox(height: 32),
-                field(
-                  label: 'Full name',
-                  controller: name,
-                  icon: Icons.person_outline,
-                  validator: Validators.name,
-                ),
-                field(
-                  label: 'University student ID',
-                  controller: studentId,
-                  icon: Icons.badge_outlined,
-                  keyboard: TextInputType.number,
-                  validator: Validators.studentId,
-                ),
-                field(
-                  label: 'Email',
-                  controller: email,
-                  icon: Icons.email_outlined,
-                  keyboard: TextInputType.emailAddress,
-                  validator: Validators.email,
-                ),
-                field(
-                  label: 'Password',
-                  controller: password,
-                  icon: Icons.lock_outline,
-                  obscure: hidePassword,
-                  validator: Validators.password,
-                  suffix: IconButton(
-                    tooltip: hidePassword ? 'Show password' : 'Hide password',
-                    onPressed: () =>
-                        setState(() => hidePassword = !hidePassword),
-                    icon: Icon(
-                      hidePassword
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 500),
+            child: SingleChildScrollView(
+              padding: EdgeInsets.symmetric(horizontal: 26, vertical: 24),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    SizedBox(height: 12),
+                    Icon(Icons.person_add_alt_1_rounded, size: 66, color: _text),
+                    SizedBox(height: 20),
+                    Text('Create Account',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: _text)),
+                    SizedBox(height: 10),
+                    Text('Register as a student',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(color: _muted)),
+                    SizedBox(height: 32),
+                    _field(
+                      label: 'Full name',
+                      controller: _name,
+                      icon: Icons.person_outline,
+                      validator: Validators.name,
+                      action: TextInputAction.next,
                     ),
-                  ),
-                ),
-                field(
-                  label: 'Confirm password',
-                  controller: confirm,
-                  icon: Icons.verified_user_outlined,
-                  obscure: hideConfirm,
-                  validator: (value) {
-                    if (value == null || value.isEmpty) {
-                      return 'Confirm your password';
-                    }
-                    if (value != password.text) return 'Passwords do not match';
-                    return null;
-                  },
-                  suffix: IconButton(
-                    tooltip: hideConfirm
-                        ? 'Show confirmation'
-                        : 'Hide confirmation',
-                    onPressed: () => setState(() => hideConfirm = !hideConfirm),
-                    icon: Icon(
-                      hideConfirm
-                          ? Icons.visibility_outlined
-                          : Icons.visibility_off_outlined,
+                    _field(
+                      label: 'University student ID',
+                      controller: _studentId,
+                      icon: Icons.badge_outlined,
+                      keyboardType: TextInputType.number,
+                      validator: Validators.studentId,
+                      action: TextInputAction.next,
                     ),
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Container(
-                  height: 58,
-                  decoration: BoxDecoration(
-                    color: background,
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: const [
-                      BoxShadow(
-                        color: Colors.white,
-                        offset: Offset(-5, -5),
-                        blurRadius: 10,
+                    _field(
+                      label: 'Email',
+                      controller: _email,
+                      icon: Icons.email_outlined,
+                      keyboardType: TextInputType.emailAddress,
+                      validator: Validators.email,
+                      action: TextInputAction.next,
+                    ),
+                    _field(
+                      label: 'Password',
+                      controller: _password,
+                      icon: Icons.lock_outline,
+                      obscure: _hidePassword,
+                      validator: Validators.password,
+                      action: TextInputAction.next,
+                      suffix: IconButton(
+                        tooltip: _hidePassword ? 'Show password' : 'Hide password',
+                        onPressed: () => setState(() => _hidePassword = !_hidePassword),
+                        icon: Icon(_hidePassword
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined),
                       ),
-                      BoxShadow(
-                        color: Color(0xFFB8C4CE),
-                        offset: Offset(5, 5),
-                        blurRadius: 10,
+                    ),
+                    _field(
+                      label: 'Confirm password',
+                      controller: _confirm,
+                      icon: Icons.verified_user_outlined,
+                      obscure: _hideConfirm,
+                      action: TextInputAction.done,
+                      validator: (value) {
+                        if ((value ?? '').isEmpty) return 'Confirm your password';
+                        if (value != _password.text) return 'Passwords do not match';
+                        return null;
+                      },
+                      onEditingComplete: _submit,
+                      suffix: IconButton(
+                        tooltip: _hideConfirm ? 'Show confirmation' : 'Hide confirmation',
+                        onPressed: () => setState(() => _hideConfirm = !_hideConfirm),
+                        icon: Icon(_hideConfirm
+                            ? Icons.visibility_outlined
+                            : Icons.visibility_off_outlined),
                       ),
-                    ],
-                  ),
-                  child: Material(
-                    color: Colors.transparent,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(18),
-                      onTap: submit,
-                      child: const Center(
-                        child: Text(
-                          'Create Account',
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: ink,
+                    ),
+                    SizedBox(height: 15),
+                    Container(
+                      height: 58,
+                      decoration: BoxDecoration(
+                        color: _background,
+                        borderRadius: BorderRadius.circular(18),
+                        boxShadow: [
+                          BoxShadow(color: SmartAttendPalette.highlight, offset: Offset(-5, -5), blurRadius: 10),
+                          BoxShadow(color: _shadow, offset: Offset(5, 5), blurRadius: 10),
+                        ],
+                      ),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: InkWell(
+                          borderRadius: BorderRadius.circular(18),
+                          onTap: _busy ? null : _submit,
+                          child: Center(
+                            child: _busy
+                                ? CircularProgressIndicator(color: _text)
+                                : Text('Create Account',
+                                    style: TextStyle(fontSize: 18,
+                                        fontWeight: FontWeight.bold, color: _text)),
                           ),
                         ),
                       ),
                     ),
-                  ),
+                    SizedBox(height: 20),
+                    TextButton(
+                      onPressed: _busy ? null : () => Navigator.of(context).pop(),
+                      child: Text('Already have an account? Log In',
+                          style: TextStyle(color: _text)),
+                    ),
+                  ],
                 ),
-                const SizedBox(height: 14),
-                TextButton(
-                  onPressed: () => Navigator.pop(context),
-                  child: const Text(
-                    'Already have an account? Log In',
-                    style: TextStyle(color: ink),
-                  ),
-                ),
-              ],
+              ),
             ),
           ),
         ),

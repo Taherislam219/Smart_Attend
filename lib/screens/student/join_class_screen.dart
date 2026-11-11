@@ -1,3 +1,4 @@
+import '../../theme/smartattend_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -9,10 +10,10 @@ class JoinClassScreen extends StatefulWidget {
 }
 
 class _JoinClassScreenState extends State<JoinClassScreen> {
-  static const _background = Color(0xFFE8EEF3);
-  static const _text = Color(0xFF263238);
-  static const _muted = Color(0xFF607D8B);
-  static const _shadow = Color(0xFFB8C4CE);
+  static Color get _background => SmartAttendPalette.background;
+  static Color get _text => SmartAttendPalette.text;
+  static Color get _muted => SmartAttendPalette.muted;
+  static Color get _shadow => SmartAttendPalette.shadow;
 
   final _formKey = GlobalKey<FormState>();
   final _joinCodeController = TextEditingController();
@@ -46,7 +47,7 @@ class _JoinClassScreenState extends State<JoinClassScreen> {
 
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text('Request sent! Waiting for teacher approval.'),
         ),
       );
@@ -55,22 +56,21 @@ class _JoinClassScreenState extends State<JoinClassScreen> {
       if (!mounted) return;
       // Avoid exposing internal database details in the student UI.
       final detail = error.message.toLowerCase();
-      final message =
-          detail.contains('duplicate') ||
+      final message = detail.contains('duplicate') ||
               detail.contains('already') ||
               detail.contains('existing')
           ? 'You have already requested to join this class.'
           : detail.contains('invalid') ||
-                detail.contains('not found') ||
-                detail.contains('unknown')
-          ? 'Class code not found. Please check the code.'
-          : 'Unable to send request. Check the code and try again.';
+                  detail.contains('not found') ||
+                  detail.contains('unknown')
+              ? 'Class code not found. Please check the code.'
+              : 'Unable to send request. Check the code and try again.';
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text(message)));
     } catch (_) {
       if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Something went wrong. Try again.')),
+        SnackBar(content: Text('Something went wrong. Try again.')),
       );
     } finally {
       if (mounted) setState(() => _isSubmitting = false);
@@ -79,10 +79,11 @@ class _JoinClassScreenState extends State<JoinClassScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Rebuild when the app theme changes.
     return Scaffold(
       backgroundColor: _background,
       appBar: AppBar(
-        title: const Text('Join a Class'),
+        title: Text('Join a Class'),
         backgroundColor: _background,
         foregroundColor: _text,
         centerTitle: true,
@@ -90,22 +91,22 @@ class _JoinClassScreenState extends State<JoinClassScreen> {
       body: SafeArea(
         child: Center(
           child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
+            constraints: BoxConstraints(maxWidth: 520),
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 30),
+              padding: EdgeInsets.symmetric(horizontal: 24, vertical: 30),
               child: Form(
                 key: _formKey,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(24),
+                      padding: EdgeInsets.all(24),
                       decoration: BoxDecoration(
                         color: _background,
                         borderRadius: BorderRadius.circular(22),
-                        boxShadow: const [
+                        boxShadow: [
                           BoxShadow(
-                            color: Colors.white,
+                            color: SmartAttendPalette.highlight,
                             offset: Offset(-5, -5),
                             blurRadius: 12,
                           ),
@@ -118,13 +119,9 @@ class _JoinClassScreenState extends State<JoinClassScreen> {
                       ),
                       child: Column(
                         children: [
-                          const Icon(
-                            Icons.vpn_key_rounded,
-                            size: 50,
-                            color: _text,
-                          ),
-                          const SizedBox(height: 15),
-                          const Text(
+                          Icon(Icons.vpn_key_rounded, size: 50, color: _text),
+                          SizedBox(height: 15),
+                          Text(
                             'Enter your class code',
                             textAlign: TextAlign.center,
                             style: TextStyle(
@@ -133,14 +130,14 @@ class _JoinClassScreenState extends State<JoinClassScreen> {
                               fontWeight: FontWeight.bold,
                             ),
                           ),
-                          const SizedBox(height: 10),
-                          const Text(
+                          SizedBox(height: 10),
+                          Text(
                             'Ask your teacher for the 8-character join code. '
                             'Joining requires teacher approval.',
                             textAlign: TextAlign.center,
                             style: TextStyle(color: _muted),
                           ),
-                          const SizedBox(height: 26),
+                          SizedBox(height: 26),
                           TextFormField(
                             controller: _joinCodeController,
                             textCapitalization: TextCapitalization.characters,
@@ -150,8 +147,7 @@ class _JoinClassScreenState extends State<JoinClassScreen> {
                             enableSuggestions: false,
                             validator: _validateJoinCode,
                             onFieldSubmitted: (_) {
-                              if (_validateJoinCode(_joinCodeController.text) ==
-                                  null) {
+                              if (_validateJoinCode(_joinCodeController.text) == null) {
                                 _submit();
                               } else {
                                 _formKey.currentState?.validate();
@@ -160,7 +156,7 @@ class _JoinClassScreenState extends State<JoinClassScreen> {
                             decoration: InputDecoration(
                               labelText: 'Class join code',
                               hintText: '8 characters',
-                              prefixIcon: const Icon(Icons.key_rounded),
+                              prefixIcon: Icon(Icons.key_rounded),
                               filled: true,
                               fillColor: _background,
                               border: OutlineInputBorder(
@@ -168,14 +164,14 @@ class _JoinClassScreenState extends State<JoinClassScreen> {
                               ),
                             ),
                           ),
-                          const SizedBox(height: 12),
+                          SizedBox(height: 12),
                           SizedBox(
                             width: double.infinity,
                             height: 54,
                             child: ElevatedButton.icon(
                               onPressed: _isSubmitting ? null : _submit,
                               icon: _isSubmitting
-                                  ? const SizedBox(
+                                  ? SizedBox(
                                       width: 20,
                                       height: 20,
                                       child: CircularProgressIndicator(
@@ -183,15 +179,11 @@ class _JoinClassScreenState extends State<JoinClassScreen> {
                                         color: Colors.white,
                                       ),
                                     )
-                                  : const Icon(Icons.send_rounded),
-                              label: Text(
-                                _isSubmitting
-                                    ? 'Sending...'
-                                    : 'Request to Join',
-                              ),
+                                  : Icon(Icons.send_rounded),
+                              label: Text(_isSubmitting ? 'Sending...' : 'Request to Join'),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: _text,
-                                foregroundColor: Colors.white,
+                                foregroundColor: SmartAttendPalette.background,
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(16),
                                 ),

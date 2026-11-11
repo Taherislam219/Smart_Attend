@@ -1,3 +1,4 @@
+import '../../theme/smartattend_theme.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -6,6 +7,7 @@ import '../../utils/validators.dart';
 import '../student/student_dashboard.dart';
 import '../teacher/teacher_dashboard.dart';
 import 'register_screen.dart';
+import 'forgot_password_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   final String role;
@@ -17,9 +19,9 @@ class LoginScreen extends StatefulWidget {
 }
 
 class _LoginScreenState extends State<LoginScreen> {
-  static const _background = Color(0xFFE8EEF3);
-  static const _text = Color(0xFF263238);
-  static const _muted = Color(0xFF607D8B);
+  static Color get _background => SmartAttendPalette.background;
+  static Color get _text => SmartAttendPalette.text;
+  static Color get _muted => SmartAttendPalette.muted;
 
   final _formKey = GlobalKey<FormState>();
 
@@ -68,7 +70,7 @@ class _LoginScreenState extends State<LoginScreen> {
         }
 
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Text('This account cannot access the selected role.'),
           ),
         );
@@ -84,12 +86,12 @@ class _LoginScreenState extends State<LoginScreen> {
       if (actualRole == 'student') {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const StudentDashboard()),
+          MaterialPageRoute(builder: (_) => StudentDashboard()),
         );
       } else if (actualRole == 'teacher') {
         Navigator.pushReplacement(
           context,
-          MaterialPageRoute(builder: (_) => const TeacherDashboard()),
+          MaterialPageRoute(builder: (_) => TeacherDashboard()),
         );
       }
     } on AuthException catch (error) {
@@ -105,7 +107,7 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Login failed. Please try again.')),
+        SnackBar(content: Text('Login failed. Please try again.')),
       );
     } finally {
       if (mounted) {
@@ -118,21 +120,21 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    Theme.of(context); // Rebuild when the app theme changes.
     final isTeacher = widget.role == 'Teacher';
 
     return Scaffold(
       backgroundColor: _background,
 
-      appBar: AppBar(
-        title: Text('${widget.role} Login'),
-        backgroundColor: _background,
-        foregroundColor: _text,
-        centerTitle: true,
-      ),
 
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 26, vertical: 28),
+      body: Stack(
+        children: [
+          SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(maxWidth: 500),
+            child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(horizontal: 26, vertical: 28),
 
           child: Form(
             key: _formKey,
@@ -141,7 +143,7 @@ class _LoginScreenState extends State<LoginScreen> {
               crossAxisAlignment: CrossAxisAlignment.stretch,
 
               children: [
-                const SizedBox(height: 18),
+                SizedBox(height: 40),
 
                 // Neumorphic role icon.
                 Center(
@@ -153,14 +155,14 @@ class _LoginScreenState extends State<LoginScreen> {
                       color: _background,
                       borderRadius: BorderRadius.circular(30),
 
-                      boxShadow: const [
+                      boxShadow: [
                         BoxShadow(
-                          color: Colors.white,
+                          color: SmartAttendPalette.highlight,
                           offset: Offset(-7, -7),
                           blurRadius: 14,
                         ),
                         BoxShadow(
-                          color: Color(0xFFB8C4CE),
+                          color: SmartAttendPalette.shadow,
                           offset: Offset(7, 7),
                           blurRadius: 14,
                         ),
@@ -177,9 +179,9 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 38),
+                SizedBox(height: 38),
 
-                const Text(
+                Text(
                   'Welcome back!',
                   textAlign: TextAlign.center,
 
@@ -190,16 +192,16 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                SizedBox(height: 10),
 
                 Text(
                   'Sign in to your ${widget.role.toLowerCase()} account',
                   textAlign: TextAlign.center,
 
-                  style: const TextStyle(fontSize: 15, color: _muted),
+                  style: TextStyle(fontSize: 15, color: _muted),
                 ),
 
-                const SizedBox(height: 44),
+                SizedBox(height: 44),
 
                 // Email field.
                 _inputField(
@@ -210,7 +212,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   validator: Validators.email,
                 ),
 
-                const SizedBox(height: 22),
+                SizedBox(height: 22),
 
                 // Password field.
                 _inputField(
@@ -239,7 +241,26 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 34),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: _isLoading ? null : () async {
+                      final sent = await Navigator.push<bool>(context, MaterialPageRoute(
+                        builder: (_) => ForgotPasswordScreen(
+                          initialEmail: _emailController.text.trim(),
+                        ),
+                      ));
+                      if (!mounted || sent != true) return;
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(content: Text('If this account exists, a password reset email has been sent. Check your inbox and spam folder.')),
+                      );
+                    },
+                    child: Text('Forgot Password?',
+                      style: TextStyle(color: _text, fontWeight: FontWeight.bold)),
+                  ),
+                ),
+
+                SizedBox(height: 16),
 
                 // Neumorphic login button.
                 Container(
@@ -249,14 +270,14 @@ class _LoginScreenState extends State<LoginScreen> {
                     color: _background,
                     borderRadius: BorderRadius.circular(18),
 
-                    boxShadow: const [
+                    boxShadow: [
                       BoxShadow(
-                        color: Colors.white,
+                        color: SmartAttendPalette.highlight,
                         offset: Offset(-5, -5),
                         blurRadius: 10,
                       ),
                       BoxShadow(
-                        color: Color(0xFFB8C4CE),
+                        color: SmartAttendPalette.shadow,
                         offset: Offset(5, 5),
                         blurRadius: 10,
                       ),
@@ -272,8 +293,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
                       child: Center(
                         child: _isLoading
-                            ? const CircularProgressIndicator(color: _text)
-                            : const Text(
+                            ? CircularProgressIndicator(color: _text)
+                            : Text(
                                 'Login',
                                 style: TextStyle(
                                   color: _text,
@@ -286,14 +307,14 @@ class _LoginScreenState extends State<LoginScreen> {
                   ),
                 ),
 
-                const SizedBox(height: 28),
+                SizedBox(height: 28),
 
                 // Registration navigation.
                 Row(
                   mainAxisAlignment: MainAxisAlignment.center,
 
                   children: [
-                    const Flexible(
+                    Flexible(
                       child: Text(
                         "Don't have an account?",
                         style: TextStyle(color: _muted),
@@ -306,7 +327,7 @@ class _LoginScreenState extends State<LoginScreen> {
                           : () {
                               if (isTeacher) {
                                 ScaffoldMessenger.of(context).showSnackBar(
-                                  const SnackBar(
+                                  SnackBar(
                                     content: Text(
                                       'Teacher accounts require trusted provisioning.',
                                     ),
@@ -316,13 +337,13 @@ class _LoginScreenState extends State<LoginScreen> {
                                 Navigator.push(
                                   context,
                                   MaterialPageRoute(
-                                    builder: (_) => const RegisterScreen(),
+                                    builder: (_) => RegisterScreen(),
                                   ),
                                 );
                               }
                             },
 
-                      child: const Text(
+                      child: Text(
                         'Register',
 
                         style: TextStyle(
@@ -335,7 +356,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
 
                 if (isTeacher)
-                  const Padding(
+                  Padding(
                     padding: EdgeInsets.only(top: 8),
 
                     child: Text(
@@ -348,7 +369,25 @@ class _LoginScreenState extends State<LoginScreen> {
               ],
             ),
           ),
+            ),
+          ),
         ),
+      ),
+          SafeArea(
+            child: Align(
+              alignment: Alignment.topLeft,
+              child: Padding(
+                padding: EdgeInsets.only(left: 8, top: 4),
+                child: IconButton(
+                  tooltip: 'Back',
+                  icon: Icon(Icons.arrow_back_rounded),
+                  color: _text,
+                  onPressed: _isLoading ? null : () => Navigator.maybePop(context),
+                ),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -368,10 +407,10 @@ class _LoginScreenState extends State<LoginScreen> {
         color: _background,
         borderRadius: BorderRadius.circular(18),
 
-        boxShadow: const [
-          BoxShadow(color: Colors.white, offset: Offset(-3, -3), blurRadius: 8),
+        boxShadow: [
+          BoxShadow(color: SmartAttendPalette.highlight, offset: Offset(-3, -3), blurRadius: 8),
           BoxShadow(
-            color: Color(0xFFB8C4CE),
+            color: SmartAttendPalette.shadow,
             offset: Offset(3, 3),
             blurRadius: 8,
           ),
@@ -395,7 +434,7 @@ class _LoginScreenState extends State<LoginScreen> {
             borderSide: BorderSide.none,
           ),
 
-          contentPadding: const EdgeInsets.symmetric(
+          contentPadding: EdgeInsets.symmetric(
             vertical: 20,
             horizontal: 16,
           ),
