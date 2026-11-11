@@ -1,36 +1,72 @@
 # SmartAttend
 
-**Smart Classroom Attendance Made Simple**
+**GPS-based smart classroom attendance management**
 
-SmartAttend is a Flutter application project focused on making classroom attendance easier for students and teachers. The project is currently under development as I continue learning and building with Flutter and Supabase.
+SmartAttend is a Flutter application backed by Supabase. It is being developed to help teachers manage semester classes and attendance, while students can request class enrollment, check in during an open attendance session, and review their attendance records.
 
-## Current Project Overview
+> **Project status:** Active development. Features described below are based on the current source code. Deployment, production security policies, and end-to-end behavior still need to be verified before public release.
 
-The current app includes:
+## Current Features
 
-- A welcome screen introducing SmartAttend.
-- A role-selection screen for **Teacher** and **Student**.
-- Navigation from role selection to a role-aware login screen.
-- Supabase initialization in the app entry point using compile-time configuration.
+### Student
+- Student registration with full name, university student ID, email, and password.
+- Login with database-backed role verification.
+- Password reset flow.
+- Request enrollment in a class using a class join code.
+- View enrollment request status and approved classes.
+- GPS-based attendance check-in while a teacher's attendance session is open.
+- View finalized attendance history and overall attendance summaries.
 
-> This repository is a work in progress. Authentication, attendance workflows, database integration, and other features should be considered incomplete until they are implemented and tested.
+### Teacher
+- Teacher login with role verification; public teacher self-registration is not provided in the current UI.
+- Create and edit semester classes.
+- Generate and share class join codes.
+- Review and approve or reject student enrollment requests.
+- Create attendance sheets and open GPS attendance sessions with a configurable radius and check-in window.
+- Review attendance rosters, finalize sheets, and cancel lectures.
+- Correct individual or multiple attendance records, with correction history.
+- View attendance sheets and semester reports, including PDF-related functionality.
+
+### App Experience
+- Flutter Material 3 interface with a custom SmartAttend theme.
+- Light/dark theme support.
+- Android, iOS, desktop and web platform folders are present in the repository. Actual release builds and deployment still need platform-specific testing.
 
 ## Tech Stack
 
-- **Flutter** — cross-platform application development
-- **Dart** — application programming language
-- **Supabase Flutter** — backend integration
+| Technology | Purpose |
+|---|---|
+| Flutter | Cross-platform UI |
+| Dart | Application logic |
+| Supabase | Authentication, PostgreSQL data and backend functions |
+| Geolocator | Device location for attendance check-in |
+| PDF / Printing | Report generation and printing |
+
+## Project Structure
+
+```
+lib/
+  main.dart
+  screens/
+    auth/
+    student/
+    teacher/
+  services/
+  theme/
+  utils/
+assets/
+  icon/
+web/
+android/
+ios/
+```
 
 ## Getting Started
 
-### Prerequisites
-
-Install the following before running the project:
-
-- [Flutter SDK](https://docs.flutter.dev/get-started/install)
-- [Dart SDK](https://dart.dev/get-dart) (included with Flutter)
-- [VS Code](https://code.visualstudio.com/) or Android Studio
-- A Supabase project
+### Requirements
+- Flutter SDK compatible with the Dart SDK constraint in `pubspec.yaml`
+- VS Code or Android Studio
+- A Supabase project with the required database schema, SQL functions, triggers, and access policies configured
 
 ### 1. Clone the repository
 
@@ -47,12 +83,12 @@ flutter pub get
 
 ### 3. Configure Supabase
 
-The app reads these compile-time values in `lib/main.dart`:
+The application reads the following compile-time values in `lib/main.dart`:
 
 - `SUPABASE_URL`
 - `SUPABASE_PUBLISHABLE_KEY`
 
-Run the app with your own Supabase project values:
+Run locally with your own project values:
 
 ```bash
 flutter run \
@@ -60,58 +96,55 @@ flutter run \
   --dart-define=SUPABASE_PUBLISHABLE_KEY=YOUR_SUPABASE_PUBLISHABLE_KEY
 ```
 
-Replace the placeholders with the Project URL and publishable key from your Supabase project.
+Use the Supabase Project URL and publishable key. **Never include a Supabase secret key or service-role key in a Flutter client application.** A publishable key is not a substitute for database security: configure and test Row Level Security (RLS) policies and restrict privileged operations to trusted server-side code.
 
-**Important:** Do not put a Supabase secret key or service-role key in the Flutter app. Client applications are public environments. Configure appropriate Row Level Security (RLS) policies for every table that contains application data.
+### 4. Run checks
 
-### 4. Run the project
-
-You can also run the app from VS Code or Android Studio after configuring the required values.
-
-## Project Structure
-
-The project is organized around Flutter application screens and configuration files. Some of the current screen files include:
-
-```
-lib/
-  main.dart
-  screens/
-    welcome_screen.dart
-    role_selection_screen.dart
-    auth/
-      login_screen.dart
+```bash
+flutter analyze
+flutter test
 ```
 
-The structure may change as development continues.
+These commands are recommended before submitting changes. This README update does not mean the project has already passed them.
 
-## Development Status
+## Attendance Flow (Current App Design)
 
-- [x] Flutter project initialized
-- [x] Supabase package added
-- [x] Supabase initialization configured
-- [x] Welcome screen
-- [x] Teacher / Student role selection
-- [ ] Complete authentication flow
-- [ ] Teacher attendance management
-- [ ] Student attendance view
-- [ ] Database schema and access policies
-- [ ] Testing and validation
+1. A teacher creates a semester class.
+2. Students request to join using the class code.
+3. The teacher reviews enrollment requests.
+4. The teacher creates an attendance sheet and opens GPS check-in for a limited time and radius.
+5. An enrolled student attempts to check in from the app.
+6. The teacher reviews, corrects if necessary, and finalizes attendance.
+7. Students can review finalized attendance records.
 
-The checklist reflects the project structure and progress documented so far; unchecked items are planned or unfinished.
+GPS is a location signal, not proof of a person's identity or a guarantee against spoofing. Attendance integrity also depends on backend authorization and database policies.
 
-## Learning Goals
+## Roadmap
 
-Through this project, I am practicing:
+- [ ] Implement one-account/one-registered-device enforcement for student accounts.
+- [ ] Add a secure device registration and device-change approval process.
+- [ ] Review and test Supabase RLS policies and privileged database functions.
+- [ ] Complete web deployment configuration and production testing.
+- [ ] Add automated tests for authentication, enrollment, and attendance flows.
 
-- Building Flutter interfaces and screen navigation
-- Organizing a Flutter application
-- Connecting a Flutter app to Supabase
-- Learning how authentication and role-based application flows work
+### Planned: One Student Account, One Device
 
-## Contributing
+The next planned security improvement is **device binding**: each student account will be registered to one device at a time, and attendance actions from another device will be rejected until an authorized device-change process is completed.
 
-This is currently a personal learning project. Suggestions and constructive feedback are welcome.
+This is a planned feature, not an implemented or verified capability yet. The enforcement must happen on the backend (not only in Flutter), with a secure device-registration flow, server-side checks on attendance actions, and a controlled recovery/change process.
+
+## Security Notes
+
+- Keep Supabase secret and service-role keys out of the client and Git history.
+- Use RLS on every table exposed to the client.
+- Ensure database functions validate the authenticated user, their role, enrollment, class ownership, and attendance-session state.
+- Treat client-supplied GPS coordinates and device identifiers as untrusted input.
+- Review production logs to ensure passwords, tokens, and unnecessary personal data are not printed.
+
+## Development
+
+This is an individual learning project, and it is still being improved through implementation and testing. Feedback and suggestions are welcome.
 
 ## License
 
-No license has been added to this repository yet. All rights remain with the author unless a license is added.
+No license has been added yet. Unless a license is added, standard copyright applies.
